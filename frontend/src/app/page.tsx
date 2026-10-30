@@ -15,7 +15,7 @@ import {
   Target,
   XCircle,
 } from "lucide-react";
-import { formatGEX, formatMoney, formatPct } from "../lib/format";
+import { formatGEX, formatMoney, formatPct } from "../utils/format";
 
 const BACKEND_URL = "http://127.0.0.1:8000";
 
