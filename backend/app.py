@@ -8,8 +8,18 @@ from typing import Dict, Any, List, Optional
 from backend.config import settings
 from backend.database import get_db_connection, init_db
 from backend.data_extractor import fetch_live_tradier_snapshot
-from backend.agent.schema import HypothesisProposal, BacktestEvaluationResult
-from backend.agent.muse_agent import generate_hypothesis, get_research_memory_summary
+from backend.agent.schema import (
+    HypothesisProposal,
+    BacktestEvaluationResult,
+    MarketBrief,
+    HypothesisCritique,
+)
+from backend.agent.muse_agent import (
+    generate_hypothesis,
+    generate_market_brief,
+    critique_hypothesis,
+    get_research_memory_summary,
+)
 from backend.evaluator.backtest_engine import run_deterministic_backtest
 
 app = FastAPI(
@@ -30,6 +40,14 @@ app.add_middleware(
 class GenerateHypothesisRequest(BaseModel):
     family: str = "gamma_regime"
     ticker: str = "SPY"
+
+class MarketBriefRequest(BaseModel):
+    ticker: str = "SPY"
+    market_state: Optional[Dict[str, Any]] = None
+
+class CritiqueRequest(BaseModel):
+    ticker: str = "SPY"
+    hypothesis: HypothesisProposal
 
 @app.on_event("startup")
 def on_startup():
@@ -199,3 +217,23 @@ def get_all_experiments():
 @app.get("/api/research/memory-summary")
 def get_memory_summary():
     return {"summary": get_research_memory_summary()}
+
+@app.post("/api/muse/brief", response_model=MarketBrief)
+def api_market_brief(req: MarketBriefRequest):
+    """
+    Meta Muse desk brief: plain-English regime translation for the current structure.
+    """
+    try:
+        return generate_market_brief(ticker=req.ticker, market_overlay=req.market_state)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/muse/critique", response_model=HypothesisCritique)
+def api_critique_hypothesis(req: CritiqueRequest):
+    """
+    Meta Muse pre-flight critique before sealed backtest evaluation.
+    """
+    try:
+        return critique_hypothesis(proposal=req.hypothesis, ticker=req.ticker)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
