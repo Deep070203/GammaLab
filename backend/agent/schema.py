@@ -65,3 +65,22 @@ class BacktestEvaluationResult(BaseModel):
     rejection_reason: Optional[str] = None
     lessons_learned: str
     timeline_chart: Optional[List[Dict[str, Any]]] = None
+
+class MarketBrief(BaseModel):
+    headline: str
+    regime_label: str
+    plain_english: str
+    watch_levels: List[str]
+    do_now: List[str]
+    avoid_now: List[str]
+    confidence: float = Field(0.5, ge=0.0, le=1.0)
+    source: str = "muse"
+
+class HypothesisCritique(BaseModel):
+    verdict: str  # ready | revise | risky
+    score: int = Field(50, ge=0, le=100)
+    strengths: List[str]
+    risks: List[str]
+    suggested_revision: str = ""
+    trader_takeaway: str
+    source: str = "muse"
